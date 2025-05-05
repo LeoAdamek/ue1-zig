@@ -9,7 +9,5 @@ pub fn main() !void {
     state.memory = 0b0010_0011;
 
     // Tick an Instruction.
-    state = try state.tick(lib.Instruction.ADD, 0b0000_0001);
-
-    state = try state.tick(lib.Instruction.STO, 7);
+    state = try state.tick(lib.Instruction.STO, 0);
 }

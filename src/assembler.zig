@@ -1,6 +1,6 @@
 const std = @import("std");
-const Instruction = @import("isa").Instruction;
-const Address = @import("isa").Address;
+const Instruction = @import("isa.zig").Instruction;
+const Address = @import("isa.zig").Address;
 
 pub const Assembler = struct {
     const Self = @This();

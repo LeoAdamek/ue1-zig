@@ -1,7 +1,7 @@
 const std = @import("std");
 const testing = std.testing;
-const isa = @import("isa");
-const log = std.log.scoped(.ue1);
+const isa = @import("isa.zig");
+const log = std.log.scoped(.ue1_emu);
 
 pub const Error = error{
     UnimplementedInstruction,
@@ -77,12 +77,21 @@ pub const State = struct {
             },
 
             Instruction.STO => {
-                log.debug("Store {b} @ {b:08}", .{ self.registers.scratch, addr });
+                log.debug("Store {b} @ {}", .{ self.registers.scratch, addr });
 
-                newmem |= scrval;
-
-                log.debug("Current Memory: {b:08}", .{self.memory});
-                log.debug("New Memory:     {b:08}", .{newmem});
+                const scrmsk = One << addr;
+            
+                if (self.registers.scratch == 1) {
+                    log.debug("Store = {b:08} | {b:08}", .{ self.memory, scrmsk });
+                    newmem |= scrmsk; // If storing 1, then OR
+                } else {
+                    log.debug("Store = {b:08} & {b:08}", .{ self.memory, ~scrmsk});
+                    newmem &= ~scrmsk; // If storing 0 then NAND
+                }
+                
+    
+                log.debug("Current Memory: {b:08} ({d:02})", .{self.memory, self.memory});
+                log.debug("New Memory:     {b:08} ({d:02})", .{newmem, newmem});
             },
 
             Instruction.ADD => {
@@ -130,13 +139,32 @@ test "Execute Instruction: STO" {
     state.memory = 0b0000_1111;
     state.registers.scratch = 1;
 
-    var result = try state.tick(Instruction.STO, 0b101);
+    var result = try state.tick(Instruction.STO, 4);
     try testing.expectEqual(0b0001_1111, result.memory);
     
-    state.registers.scratch = 0;
+    result.registers.scratch = 0;
     result = try result.tick(Instruction.STO, 0b000);
     try testing.expectEqual(0b0001_1110, result.memory);
 
+}
+
+test "Execute Instruction: ONE" {
+    const state = State.init();
+
+    const result = try state.tick(Instruction.ONE, 0);
+    try testing.expectEqual(1, result.registers.scratch);
+}
+
+test "Execute Instruction: OR" {
+    var state = State.init();
+    
+    state.memory = 0b0101_0101;
+    
+    var result = try state.tick(Instruction.OR, 1);
+    try testing.expectEqual(0, result.registers.scratch);
+
+    result = try state.tick(Instruction.OR, 0);
+    try testing.expectEqual(1, result.registers.scratch);
 }
 
 test "Execute Insturction: ADD" {

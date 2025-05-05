@@ -17,20 +17,12 @@ pub fn build(b: *std.Build) void {
     // set a preferred release mode, allowing the user to decide how to optimize.
     const optimize = b.standardOptimizeOption(.{});
 
-    // Module for the ISA definitions, used as an include.
-    const isa_mod = b.createModule(.{
-        .root_source_file = b.path("src/isa.zig"),
-        .target = target,
-        .optimize = optimize,
-    });
-
     // Assembler
     const mod_lib_assembler = b.createModule(.{
         .root_source_file = b.path("src/assembler.zig"),
         .target = target,
         .optimize = optimize,
     });
-    mod_lib_assembler.addImport("isa", isa_mod);
 
     const lib_assembler = b.addLibrary(.{
         .linkage = .static,
@@ -46,7 +38,6 @@ pub fn build(b: *std.Build) void {
         .target = target,
         .optimize = optimize,
     });
-    mod_lib_emu.addImport("isa", isa_mod);
 
     const lib_emu = b.addLibrary(.{
         .linkage = .static,
@@ -66,7 +57,6 @@ pub fn build(b: *std.Build) void {
         .optimize = optimize,
     });
     exe_mod.addImport("ue1/emulator", mod_lib_emu);
-    exe_mod.addImport("isa", isa_mod);
 
     // This creates another `std.Build.Step.Compile`, but this one builds an executable
     // rather than a static library.
@@ -103,8 +93,6 @@ pub fn build(b: *std.Build) void {
     const run_step = b.step("run", "Run the app");
     run_step.dependOn(&run_cmd.step);
 
-    // Creates a step for unit testing. This only builds the test executable
-    // but does not run it.
     const lib_emu_unit_tests = b.addTest(.{
         .root_module = mod_lib_emu,
     });
